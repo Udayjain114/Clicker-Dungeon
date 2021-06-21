@@ -36,7 +36,6 @@ class Button():
             self.bcolour = bcolour
             self.fbcolour = fbcolour
             self.fcolour = fcolour
-            self.font = font
             self.fontsize = fontsize
             self.text = text
             self.current = False
@@ -56,7 +55,22 @@ class Button():
             else:
                 self.current = False
                 return False
+class Enemy(pygame.sprite.Sprite):
 
+    def __init__(self, dx, dy, filename):
+        pygame.sprite.Sprite.__init__(self)
+
+        self.image = pygame.image.load(filename).convert()
+
+        self.rect = self.image.get_rect()
+        self.rect.x = dx
+        self.rect.y = dy
+
+   
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+    
 pygame.init()
 pygame.font.init()
 
@@ -66,28 +80,28 @@ screen2 = Screen("Screen 2")
 win = menuScreen.makeCurrent()
 
 done = False
-shopButton = Button(0, 0, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Shop")
-returnButton = Button(0, 0, 150, 50, colours["White"], colours["Blue"], "arial", 20, colours["Black"], "Return")
-
+shopButton = Button(125, 500, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Shop")
+DungeonButton = Button(125, 500, 150, 50, colours["Black"], colours["Blue"], "arial", 20, colours["White"], "Dungeon")
+Goblin = Enemy(0, 0, "images/goblin.JPG")
 toggle = False
 while not done:
     menuScreen.screenUpdate()
     screen2.screenUpdate()
-    mouse_pos = pygame.mouse.get_pressed()
+    mouse_pos = pygame.mouse.get_pos()
     mouse_click = pygame.mouse.get_pressed()
     keys = pygame.key.get_pressed()
     
     if menuScreen.checkUpdate():
         screen2button = shopButton.focusCheck(mouse_pos, mouse_click)
         shopButton.showButton(menuScreen.returnTitle())
-        
+        Goblin.draw(menuScreen)
         if screen2button:
             win = screen2.makeCurrent()
             menuScreen.endCurrent()
             
     elif screen2.checkUpdate():
-        returnm = returnButton.focusCheck(mouse_pos, mouse_click)
-        returnButton.showButton(screen2.returnTitle())
+        returnm = DungeonButton.focusCheck(mouse_pos, mouse_click)
+        DungeonButton.showButton(screen2.returnTitle())
         
         if returnm:
             win = menuScreen.makeCurrent()
@@ -96,6 +110,7 @@ while not done:
     for event in pygame.event.get():
         if(event.type == pygame.QUIT):
             done = True
+    
     pygame.display.update()
     
 pygame.quit()
