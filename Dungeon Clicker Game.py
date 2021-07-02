@@ -1,5 +1,6 @@
 import pygame
-
+pygame.init()
+pygame.font.init()
 colours = {"White" : (255, 255, 255), "Black" : (0, 0, 0), "Red" : (255, 0, 0), "Blue" : (0, 0, 255), "Green" : (0, 255, 0)}
 
 class Screen():
@@ -65,14 +66,13 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = dx
         self.rect.y = dy
-
+      
    
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
     
-pygame.init()
-pygame.font.init()
+        
 
 menuScreen = Screen("Menu Screen")
 screen2 = Screen("Screen 2")
@@ -82,7 +82,8 @@ win = menuScreen.makeCurrent()
 done = False
 shopButton = Button(125, 500, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Shop")
 DungeonButton = Button(125, 500, 150, 50, colours["Black"], colours["Blue"], "arial", 20, colours["White"], "Dungeon")
-Goblin = Enemy(0, 0, "images/goblin.JPG")
+goblin = Enemy(0 , 20, "images\goblin-resized.png")
+goblin2 = Enemy(0 , 20, "images\goblin.jpg")
 toggle = False
 while not done:
     menuScreen.screenUpdate()
@@ -92,9 +93,13 @@ while not done:
     keys = pygame.key.get_pressed()
     
     if menuScreen.checkUpdate():
+        goblin.draw(menuScreen.screen)
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN():
+                goblin2.draw(menuScreen.screen)
         screen2button = shopButton.focusCheck(mouse_pos, mouse_click)
         shopButton.showButton(menuScreen.returnTitle())
-        Goblin.draw(menuScreen)
+        
         if screen2button:
             win = screen2.makeCurrent()
             menuScreen.endCurrent()
@@ -110,6 +115,7 @@ while not done:
     for event in pygame.event.get():
         if(event.type == pygame.QUIT):
             done = True
+    
     
     pygame.display.update()
     
