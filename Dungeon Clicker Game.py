@@ -2,7 +2,8 @@ import pygame
 pygame.init()
 pygame.font.init()
 colours = {"White" : (255, 255, 255), "Black" : (0, 0, 0), "Red" : (255, 0, 0), "Blue" : (0, 0, 255), "Green" : (0, 255, 0)}
-clickdamage = 1
+orighpamt = 10
+gold_dropped = 10
 Whetstone_Level = 0
 
 class Screen():
@@ -84,14 +85,18 @@ win = menuScreen.makeCurrent()
 
 done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
-
-clickdamagelevel = Button(160, 10, 150, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
-clickdamageupgrade = Button(10, 10, 150, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Whetstone")
+goldamt = 0
+clickdamage = 1
+hitpoints = orighpamt
+clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
+clickdamageupgrade = Button(10, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Whetstone")
+Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
 shopButton = Button(125, 500, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Shop")
 DungeonButton = Button(125, 500, 150, 50, colours["Black"], colours["Blue"], "arial", 20, colours["White"], "Dungeon")
 hitboxButton = Button(80, 50, 280, 400, colours["White"], colours["Red"], "arial", 20, colours["White"], "")
+hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
 goblin = Enemy(0 , 20, "images\goblin-resized.png")
-goblin2 = Enemy(0 , 20, "images\goblin.jpg")
+goblin2 = Enemy(0 , 20, "images\goolin.png")
 toggle = False
 while not done:
     menuScreen.screenUpdate()
@@ -111,9 +116,24 @@ while not done:
         attack = hitboxButton.focusCheck(mouse_pos, mouse_click)
         hitboxButton.showButton(menuScreen.returnTitle())
         goblin.draw(menuScreen.screen)
+        hitpointamount.showButton(menuScreen.returnTitle())
         shopButton.showButton(menuScreen.returnTitle())
         if attack:
-            print("hitpoints - click damage")
+            hitpoints -= clickdamage
+            if hitpoints < 0:
+                hitpoints = 0
+            hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
+            hitpointamount.showButton(menuScreen.returnTitle())
+            if hitpoints == 0:
+                goldamt += gold_dropped
+                Gold = Button(10, 50, 150, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
+                goblin2.draw(menuScreen.screen)
+                orighpamt = round(orighpamt * 1.5)
+                hitpoints = orighpamt
+                gold_dropped = round(gold_dropped * 1.1)
+                hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
+                hitpointamount.showButton(menuScreen.returnTitle())                
+                pygame.display.update()
         if screen2button:
             win = screen2.makeCurrent()
 
@@ -124,9 +144,15 @@ while not done:
         DungeonButton.showButton(screen2.returnTitle())
         clickdamageupgrade.showButton(screen2.returnTitle())
         clickdamagelevel.showButton(screen2.returnTitle())
+        Gold.showButton(screen2.returnTitle())
         if clickdamageupgrade.focusCheck(mouse_pos, mouse_click):
+            
             Whetstone_Level += 1
-            clickdamagelevel = Button(160, 10, 150, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
+            clickdamage += 1
+            goldamt -= round(1.1* Whetstone_Level)
+            Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
+            Gold.showButton(screen2.returnTitle())
+            clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
             clickdamagelevel.showButton(screen2.returnTitle())
         if returnm:
             win = menuScreen.makeCurrent()
