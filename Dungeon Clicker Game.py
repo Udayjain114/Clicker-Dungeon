@@ -1,11 +1,13 @@
 import pygame
+import math
 pygame.init()
 pygame.font.init()
 colours = {"White" : (255, 255, 255), "Black" : (0, 0, 0), "Red" : (255, 0, 0), "Blue" : (0, 0, 255), "Green" : (0, 255, 0)}
 orighpamt = 10
 gold_dropped = 10
-Whetstone_Level = 0
-
+Whetstone_Level = 1
+current_monster = 0
+level = 1
 class Screen():
     def __init__(self, title, width=400, height=600, fill=colours["White"]):
         self.title=title
@@ -87,8 +89,10 @@ done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
 goldamt = 0
 clickdamage = 1
+WhetstoneCost = 1
 hitpoints = orighpamt
 clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
+clickdamagecost = Button(260, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(WhetstoneCost))))
 clickdamageupgrade = Button(10, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Whetstone")
 Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
 shopButton = Button(125, 500, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Shop")
@@ -96,14 +100,28 @@ DungeonButton = Button(125, 500, 150, 50, colours["Black"], colours["Blue"], "ar
 hitboxButton = Button(80, 50, 280, 400, colours["White"], colours["Red"], "arial", 20, colours["White"], "")
 hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
 goblin = Enemy(0 , 20, "images\goblin-resized.png")
-goblin2 = Enemy(0 , 20, "images\goolin.png")
+monster2 = Enemy(50 , 100, "images\monster2.png")
+monster3 = Enemy(50 , 100, "images\monster3.png")
+monster4 = Enemy(50 , 100, "images\monster4.png")
+monster5 = Enemy(50 , 100, "images\monster5.png")
+monster6 = Enemy(50 , 100, "images\monster6.png")
+monster7 = Enemy(50 , 100, "images\monster7.png")
+monster8 = Enemy(50 , 100, "images\monster8.png")
+monster9 = Enemy(50 , 100, "images\monster9.png")
+monster_boss = Enemy(50 , 100, "images\monster_boss.png")
 toggle = False
 while not done:
     menuScreen.screenUpdate()
     screen2.screenUpdate()
     mouse_pos = pygame.mouse.get_pos()
     keys = pygame.key.get_pressed()
-
+    if current_monster == 10:
+        level += 1
+        current_monster = 0
+    if goldamt < 0:
+        goldamt == 0    
+        
+    orighpamt = 10
     mouse_click = False
     for event in pygame.event.get():
         if(event.type == pygame.QUIT):
@@ -115,7 +133,26 @@ while not done:
         screen2button = shopButton.focusCheck(mouse_pos, mouse_click)
         attack = hitboxButton.focusCheck(mouse_pos, mouse_click)
         hitboxButton.showButton(menuScreen.returnTitle())
-        goblin.draw(menuScreen.screen)
+        if current_monster == 0:
+            goblin.draw(menuScreen.screen)
+        elif current_monster== 1:
+            monster2.draw(menuScreen.screen)
+        elif current_monster== 2:
+            monster3.draw(menuScreen.screen)
+        elif current_monster== 3:
+            monster4.draw(menuScreen.screen)
+        elif current_monster== 4:
+            monster5.draw(menuScreen.screen)
+        elif current_monster== 5:
+            monster6.draw(menuScreen.screen)
+        elif current_monster== 6:
+            monster7.draw(menuScreen.screen)
+        elif current_monster== 7:
+            monster8.draw(menuScreen.screen)
+        elif current_monster== 8:
+            monster9.draw(menuScreen.screen)
+        elif current_monster== 9:
+            monster_boss.draw(menuScreen.screen)            
         hitpointamount.showButton(menuScreen.returnTitle())
         shopButton.showButton(menuScreen.returnTitle())
         if attack:
@@ -125,12 +162,17 @@ while not done:
             hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
             hitpointamount.showButton(menuScreen.returnTitle())
             if hitpoints == 0:
+                
                 goldamt += gold_dropped
-                Gold = Button(10, 50, 150, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
-                goblin2.draw(menuScreen.screen)
-                orighpamt = round(orighpamt * 1.5)
+                Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
+                current_monster += 1
+                orighpamt = round(orighpamt*(int(level)-1 + 1.55**(level-1)))
                 hitpoints = orighpamt
-                gold_dropped = round(gold_dropped * 1.1)
+                if current_monster == 10:
+                    hitpoints = round(orighpamt*(int(level) + 1.55**(level)))
+                if current_monster == 9:
+                    hitpoints = hitpoints * 10
+                gold_dropped = math.ceil(hitpoints/15)
                 hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
                 hitpointamount.showButton(menuScreen.returnTitle())                
                 pygame.display.update()
@@ -145,15 +187,25 @@ while not done:
         clickdamageupgrade.showButton(screen2.returnTitle())
         clickdamagelevel.showButton(screen2.returnTitle())
         Gold.showButton(screen2.returnTitle())
+        clickdamagecost.showButton(screen2.returnTitle())
+        if goldamt < 0:
+            goldamt = 0
         if clickdamageupgrade.focusCheck(mouse_pos, mouse_click):
-            
-            Whetstone_Level += 1
-            clickdamage += 1
-            goldamt -= round(1.1* Whetstone_Level)
-            Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(goldamt)))
-            Gold.showButton(screen2.returnTitle())
-            clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
-            clickdamagelevel.showButton(screen2.returnTitle())
+            if goldamt >= WhetstoneCost:
+                print(goldamt)
+                print(WhetstoneCost)
+                print(goldamt - WhetstoneCost)
+                Whetstone_Level += 1
+                clickdamage += 1
+                goldamt = goldamt - WhetstoneCost
+                WhetstoneCost = math.ceil((5+Whetstone_Level)*1.07**(Whetstone_Level-1))
+                
+                Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(goldamt))))
+                Gold.showButton(screen2.returnTitle())
+                clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Whetstone_Level))
+                clickdamagelevel.showButton(screen2.returnTitle())
+                clickdamagecost = Button(260, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(math.floor(WhetstoneCost))))
+                clickdamagecost.showButton(screen2.returnTitle())
         if returnm:
             win = menuScreen.makeCurrent()
             screen2.endCurrent()
