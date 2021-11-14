@@ -8,14 +8,23 @@ orighpamt = 10
 gold_dropped = 10
 Whetstone_Level = 1
 Mercernary_Level = 0
+Assassin_Level = 0
+Sniper_Level = 0
 current_monster = 0
 Mercernary_CPS = 0
+Assassin_CPS = 0
+Sniper_CPS = 0
 level = 1
-goldamt = 50
+goldamt = 250
 clickdamage = 1
 WhetstoneCost = 1
 Mercernary_Cost = 50
+Assassin_Cost = 250
+Sniper_Cost = 1000
 second = 0
+counter = 30000
+
+
 class Screen():
     def __init__(self, title, width=400, height=600, fill=colours["White"]):
         self.title=title
@@ -97,6 +106,14 @@ done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
 
 hitpoints = orighpamt
+Assassin_Text = Button(50, 350, 400, 50, colours["White"], colours["Red"], "arial", 18, colours["Black"], "Sharpen your sword and increase your damage per click")
+Assassin_Upgrade = Button(10, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Assassin")
+Assassin_Damage_Level = Button(135, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Assassin_Level))
+Assassin_Damage_Cost = Button(260, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(Assassin_Cost))))
+Sniper_Text = Button(50, 450, 400, 50, colours["White"], colours["Red"], "arial", 18, colours["Black"], "Sharpen your sword and increase your damage per click")
+Sniper_Upgrade = Button(10, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Sniper")
+Sniper_Damage_Level = Button(135, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Sniper_Level))
+Sniper_Damage_Cost = Button(260, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(Sniper_Cost))))
 Mercernary_Text = Button(50, 250, 400, 50, colours["White"], colours["Red"], "arial", 18, colours["Black"], "Sharpen your sword and increase your damage per click")
 Mercernary_Upgrade = Button(10, 200, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Mercerary")
 Mercernary_Damage_Level = Button(135, 200, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Mercernary_Level))
@@ -110,6 +127,7 @@ shopButton = Button(125, 500, 150, 50, colours["Black"], colours["Red"], "arial"
 DungeonButton = Button(125, 500, 150, 50, colours["Black"], colours["Blue"], "arial", 20, colours["White"], "Dungeon")
 hitboxButton = Button(80, 50, 280, 400, colours["White"], colours["White"], "arial", 20, colours["White"], "")
 hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints))
+boss_timer = Button(125, 450, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Boss")
 goblin = Enemy(0 , 20, "images\goblin-resized.png")
 monster2 = Enemy(50 , 100, "images\monster2.png")
 monster3 = Enemy(50 , 100, "images\monster3.png")
@@ -122,6 +140,9 @@ monster9 = Enemy(50 , 100, "images\monster9.png")
 monster_boss = Enemy(50 , 100, "images\monster_boss.png")
 toggle = False
 while not done:
+    dt = clock.tick()
+        
+        
     menuScreen.screenUpdate()
     screen2.screenUpdate()
     mouse_pos = pygame.mouse.get_pos()
@@ -131,8 +152,16 @@ while not done:
         current_monster = 0
     if goldamt < 0:
         goldamt == 0    
-    
-    total_CPS = Mercernary_CPS       
+    if current_monster == 9:
+        counter -= dt
+        boss_timer = Button(125, 450, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], str(int(counter/1000)))
+        boss_timer.showButton(menuScreen.returnTitle())
+    if counter == 0:
+        current_monster = 0
+        hitpoints = round(orighpamt*(int(level-1) + 1.55**(level-1)))
+        counter = 30000
+        
+    total_CPS = Mercernary_CPS + Assassin_CPS + Sniper_CPS       
     orighpamt = 10
     mouse_click = False
     for event in pygame.event.get():
@@ -147,6 +176,7 @@ while not done:
         hitboxButton.showButton(menuScreen.returnTitle())
         if current_monster == 0:
             goblin.draw(menuScreen.screen)
+            counter = 30000
         elif current_monster== 1:
             monster2.draw(menuScreen.screen)
         elif current_monster== 2:
@@ -167,7 +197,7 @@ while not done:
             monster_boss.draw(menuScreen.screen)            
         hitpointamount.showButton(menuScreen.returnTitle())
         shopButton.showButton(menuScreen.returnTitle())
-        dt = clock.tick()
+        
         second += dt
         if second >= 1000:
             hitpoints -= total_CPS
@@ -210,6 +240,16 @@ while not done:
         Mercernary_Damage_Level.showButton(screen2.returnTitle())
         Mercernary_Damage_Cost.showButton(screen2.returnTitle())
         Mercernary_Text.showButton(screen2.returnTitle())
+        
+        Assassin_Upgrade.showButton(screen2.returnTitle())
+        Assassin_Damage_Level.showButton(screen2.returnTitle())
+        Assassin_Damage_Cost.showButton(screen2.returnTitle())
+        Assassin_Text.showButton(screen2.returnTitle())
+        
+        Sniper_Upgrade.showButton(screen2.returnTitle())
+        Sniper_Damage_Level.showButton(screen2.returnTitle())
+        Sniper_Damage_Cost.showButton(screen2.returnTitle())
+        Sniper_Text.showButton(screen2.returnTitle())        
         if goldamt < 0:
             goldamt = 0
         if clickdamageupgrade.focusCheck(mouse_pos, mouse_click):
@@ -240,6 +280,34 @@ while not done:
                 Mercernary_Damage_Level.showButton(screen2.returnTitle())
                 Mercernary_Damage_Cost = Button(260, 200, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(Mercernary_Cost))))                
                 Mercernary_Damage_Cost.showButton(screen2.returnTitle())
+        if Assassin_Upgrade.focusCheck(mouse_pos, mouse_click):
+            if goldamt >= Assassin_Cost:
+                    
+                goldamt = goldamt - Assassin_Cost
+                Assassin_Level += 1
+                Assassin_CPS += 22
+                
+                Assassin_Cost = math.ceil((250* Assassin_Level)*1.07**(Assassin_Level-1))
+                Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(goldamt))))
+                Gold.showButton(screen2.returnTitle())
+                Assassin_Damage_Level = Button(135, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Assassin_Level))
+                Assassin_Damage_Level.showButton(screen2.returnTitle())
+                Assassin_Damage_Cost = Button(260, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(Assassin_Cost))))                
+                Assassin_Damage_Cost.showButton(screen2.returnTitle())
+        if Sniper_Upgrade.focusCheck(mouse_pos, mouse_click):
+            if goldamt >= Sniper_Cost:
+            
+                goldamt = goldamt - Sniper_Cost
+                Sniper_Level += 1
+                Sniper_CPS += 74
+    
+                Sniper_Cost = math.ceil((1000* Sniper_Level)*1.07**(Sniper_Level-1))
+                Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(goldamt))))
+                Gold.showButton(screen2.returnTitle())
+                Sniper_Damage_Level = Button(135, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(Sniper_Level))
+                Sniper_Damage_Level.showButton(screen2.returnTitle())
+                Sniper_Damage_Cost = Button(260, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(Sniper_Cost))))                
+                Sniper_Damage_Cost.showButton(screen2.returnTitle())     
 
         if returnm:
             win = menuScreen.makeCurrent()
