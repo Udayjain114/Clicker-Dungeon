@@ -1,6 +1,7 @@
 import pygame
 import math
 import json
+import time
 pygame.init()
 pygame.font.init()
 clock = pygame.time.Clock()
@@ -18,24 +19,26 @@ data = {
     'Assassin_CPS' : 0, 
     'Sniper_CPS' : 0,
     'level' : 1,
-    'goldamt' : 250,
-    'clickdamage' : 100000000000000000,
+    'goldamt' : 1000,
+    'clickdamage' : 10,
     'WhetstoneCost' : 1,
     'Mercernary_Cost' : 50,
     'Assassin_Cost' : 250,
     'Sniper_Cost' : 1000,
     'second' : 0,
     'counter' : 30000,
-    'Stage' : 1
+    'Stage' : 1,
+    "Opening_Epoch" : 0,
+    "End_time" : 0
+    
     }
-with open("Save_Data.txt") as score_file:
-    data = json.load(score_file)
+
 class Screen():
-    def __init__(self, title, x, y, fill=colours["White"]):
+    def __init__(self, title, x, y, colour):
         self.title=title
         self.width= x
         self.height = y
-        self.fill = fill
+        self.fill = colour
         self.current = False
 
     def makeCurrent(self):
@@ -114,17 +117,21 @@ class Enemy(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
-
-menuScreen = Screen("Menu Screen", 400, 700)
-screen2 = Screen("Screen 2", 400, 700)
-
-win = menuScreen.makeCurrent()
+Opening_Screen = Screen("Menu", 400, 350, colours["White"])
+Dungeon_Screen = Screen("Dungeon", 400, 700, colours["White"])
+Shop_Screen = Screen("Shop ", 400, 700, colours["White"])
+Game_Over_Screen = Screen("Game Over", 400, 700, colours["White"])
+win = Opening_Screen.makeCurrent()
 
 
 done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
 
 hitpoints = data['orighpamt']
+Game_Over_Button =  Button(100, 500, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Congratulations You Won!", "")
+Game_Information = Button(100, 133, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Information", "To ")
+New_Game = Button(100, 000, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "New Game", "")
+Continue_Game = Button(100, 266, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Continue", "")
 Level_Info = Button(100, 600, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Level: {0} Stage: {1}".format(data['level'], data['Stage']), "")
 Assassin_Upgrade = Button(10, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], "Assassin", "Upgrade the Assassin for added DPS")
 Assassin_Damage_Level = Button(135, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(data['Assassin_Level']), "")
@@ -157,23 +164,36 @@ monster_boss = Enemy(50 , 100, "images\monster_boss.png")
 toggle = False
 while not done:
     dt = clock.tick()
-        
-        
-    menuScreen.screenUpdate()
-    screen2.screenUpdate()
+    Opening_Screen.screenUpdate() 
+    Dungeon_Screen.screenUpdate()
+    Shop_Screen.screenUpdate()
+    Game_Over_Screen.screenUpdate()
     mouse_pos = pygame.mouse.get_pos()
     keys = pygame.key.get_pressed()
+    
+    
+    
     if data['current_monster'] == 10:
         data['current_monster'] = 0
         
     if data['goldamt'] < 0:
         data['goldamt'] == 0    
     if data['current_monster'] == 9:
+        
         data['counter'] -= dt
         boss_timer = Button(125, 450, 150, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], str(int(data['counter']/1000)),"")
-        boss_timer.showButton(menuScreen.returnTitle())
-    if data['counter'] == 0:
+        boss_timer.showButton(Dungeon_Screen.returnTitle())
+    if data['counter'] < 0:
+        
         data['current_monster'] = 0
+        data["Stage"] = 1
+        if data['level'] == 1:
+            data["level"] = 1
+        elif data['level'] > 1:
+            data['level'] -= 1
+        Level_Info = Button(100, 600, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Level: {0} Stage: {1}".format(data['level'], data['Stage']), "")
+        Level_Info.showButton(Dungeon_Screen.returnTitle())
+        
         hitpoints = round(data['orighpamt']*(int(data['level']-1) + 1.55**(data['level']-1)))
         data['counter'] = 30000
         
@@ -182,52 +202,85 @@ while not done:
     mouse_click = False
     for event in pygame.event.get():
         if(event.type == pygame.QUIT):
+            
+            data['End_time'] += int(time.time())
+    
             with open("Save_Data.txt","w") as score_file:
                 json.dump(data,score_file)
+            
             done = True
         if event.type == pygame.MOUSEBUTTONDOWN:
             mouse_click = True
-
-    if menuScreen.checkUpdate():
+    if Opening_Screen.checkUpdate():
+        New_Game.showButton(Opening_Screen.returnTitle())   
+        Continue_Game.showButton(Opening_Screen.returnTitle())
+        Game_Information.showButton(Opening_Screen.returnTitle())        
+        Game_Information.showTip(Opening_Screen.returnTitle())
+        Start_Game = New_Game.focusCheck(mouse_pos, mouse_click)
+        Resume_Game = Continue_Game.focusCheck(mouse_pos, mouse_click)
+        
+        if Start_Game:
+            win = Dungeon_Screen.makeCurrent()
+        
+            Opening_Screen.endCurrent()   
+        if Resume_Game:
+            win = Dungeon_Screen.makeCurrent()
+            with open("Save_Data.txt") as score_file:
+                data = json.load(score_file)            
+            Opening_Screen.endCurrent()
+        
+            data['Opening_Epoch'] = int(time.time())
+            
+            
+            time_elapsed = (int((data["Opening_Epoch"])) - int((data["End_time"])))
+            data["goldamt"] += math.floor((time_elapsed*total_CPS)/15)
+            data['End_time'] -= data['End_time']
+            
+    
+    elif Dungeon_Screen.checkUpdate():
+        if data['level'] == 51 and data['current_monster'] == 0:
+            win = Game_Over_Screen.makeCurrent()
+            Dungeon_Screen.endCurrent()        
         screen2button = shopButton.focusCheck(mouse_pos, mouse_click)
-        Level_Info.showButton(menuScreen.returnTitle())
+        Level_Info.showButton(Dungeon_Screen.returnTitle())
         attack = hitboxButton.focusCheck(mouse_pos, mouse_click)
-        hitboxButton.showButton(menuScreen.returnTitle())
+        hitboxButton.showButton(Dungeon_Screen.returnTitle())
         if data['current_monster'] == 0:
-            goblin.draw(menuScreen.screen)
+            goblin.draw(Dungeon_Screen.screen)
             data['counter'] = 30000
             data['Stage'] = 2
         elif data['current_monster']== 1:
-            monster2.draw(menuScreen.screen)
+            monster2.draw(Dungeon_Screen.screen)
             data['Stage'] = 3
         elif data['current_monster']== 2:
-            monster3.draw(menuScreen.screen)
+            monster3.draw(Dungeon_Screen.screen)
             data['Stage'] = 4
         elif data['current_monster']== 3:
-            monster4.draw(menuScreen.screen)
+            monster4.draw(Dungeon_Screen.screen)
             data['Stage'] = 5
         elif data['current_monster']== 4:
-            monster5.draw(menuScreen.screen)
+            monster5.draw(Dungeon_Screen.screen)
             data['Stage'] = 6
         elif data['current_monster']== 5:
-            monster6.draw(menuScreen.screen)
+            monster6.draw(Dungeon_Screen.screen)
             data['Stage'] = 7
         elif data['current_monster']== 6:
-            monster7.draw(menuScreen.screen)
+            monster7.draw(Dungeon_Screen.screen)
             data['Stage'] = 8
         elif data['current_monster']== 7:
-            monster8.draw(menuScreen.screen)
+            monster8.draw(Dungeon_Screen.screen)
             data['Stage'] = 9
         elif data['current_monster']== 8:
-            monster9.draw(menuScreen.screen)
+            monster9.draw(Dungeon_Screen.screen)
             data['Stage'] = 10
         elif data['current_monster']== 9:
-            monster_boss.draw(menuScreen.screen)   
+            monster_boss.draw(Dungeon_Screen.screen)   
             data['Stage'] = 1
             
-        hitpointamount.showButton(menuScreen.returnTitle())
-        shopButton.showButton(menuScreen.returnTitle())
-        shopButton.showTip(menuScreen.returnTitle())
+            
+        hitpointamount.showButton(Dungeon_Screen.returnTitle())
+        shopButton.showButton(Dungeon_Screen.returnTitle())
+        shopButton.showTip(Dungeon_Screen.returnTitle())
         data['second'] += dt
         if data['second'] >= 1000:
             hitpoints -= total_CPS
@@ -236,12 +289,12 @@ while not done:
             hitpoints -= data['clickdamage']
         if hitpoints < 0:
             hitpoints = 0
-            Level_Info = Button(100, 600, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Level: {0} Stage: {1}".format(data["level"], data['Stage']), "")
-            Level_Info.showButton(menuScreen.returnTitle())
-        hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints), "")
-        hitpointamount.showButton(menuScreen.returnTitle())
-        if hitpoints == 0:
             
+        hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints), "")
+        hitpointamount.showButton(Dungeon_Screen.returnTitle())
+        if hitpoints == 0:
+            Level_Info = Button(100, 600, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Level: {0} Stage: {1}".format(data["level"], data['Stage']), "")
+            Level_Info.showButton(Dungeon_Screen.returnTitle())
             data['goldamt'] += data['gold_dropped']
             Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(data['goldamt'])), "")
             
@@ -254,36 +307,36 @@ while not done:
                 data['level'] += 1
             data['gold_dropped'] = math.ceil(hitpoints/15)
             hitpointamount = Button(100, 0, 200, 50, colours["White"], colours["Black"], "arial", 20, colours["Black"], str(hitpoints), "")
-            hitpointamount.showButton(menuScreen.returnTitle())                
+            hitpointamount.showButton(Dungeon_Screen.returnTitle())                
             pygame.display.update()
         if screen2button:
-            win = screen2.makeCurrent()
+            win = Shop_Screen.makeCurrent()
 
-            menuScreen.endCurrent()
+            Dungeon_Screen.endCurrent()
 
-    elif screen2.checkUpdate():
+    elif Shop_Screen.checkUpdate():
         returnm = DungeonButton.focusCheck(mouse_pos, mouse_click)
-        DungeonButton.showButton(screen2.returnTitle())
-        DungeonButton.showTip(menuScreen.returnTitle())
-        clickdamageupgrade.showButton(screen2.returnTitle())
-        clickdamagelevel.showButton(screen2.returnTitle())
-        Gold.showButton(screen2.returnTitle())
-        clickdamagecost.showButton(screen2.returnTitle())
-        Mercernary_Upgrade.showButton(screen2.returnTitle())
-        Mercernary_Damage_Level.showButton(screen2.returnTitle())
-        Mercernary_Damage_Cost.showButton(screen2.returnTitle())
-        Assassin_Upgrade.showButton(screen2.returnTitle())
-        Assassin_Damage_Level.showButton(screen2.returnTitle())
-        Assassin_Damage_Cost.showButton(screen2.returnTitle())
+        DungeonButton.showButton(Shop_Screen.returnTitle())
+        DungeonButton.showTip(Dungeon_Screen.returnTitle())
+        clickdamageupgrade.showButton(Shop_Screen.returnTitle())
+        clickdamagelevel.showButton(Shop_Screen.returnTitle())
+        Gold.showButton(Shop_Screen.returnTitle())
+        clickdamagecost.showButton(Shop_Screen.returnTitle())
+        Mercernary_Upgrade.showButton(Shop_Screen.returnTitle())
+        Mercernary_Damage_Level.showButton(Shop_Screen.returnTitle())
+        Mercernary_Damage_Cost.showButton(Shop_Screen.returnTitle())
+        Assassin_Upgrade.showButton(Shop_Screen.returnTitle())
+        Assassin_Damage_Level.showButton(Shop_Screen.returnTitle())
+        Assassin_Damage_Cost.showButton(Shop_Screen.returnTitle())
         
         
-        Sniper_Upgrade.showButton(screen2.returnTitle())
-        Sniper_Damage_Level.showButton(screen2.returnTitle())
-        Sniper_Damage_Cost.showButton(screen2.returnTitle())
-        clickdamageupgrade.showTip(menuScreen.returnTitle())
-        Mercernary_Upgrade.showTip(menuScreen.returnTitle())
-        Assassin_Upgrade.showTip(menuScreen.returnTitle())
-        Sniper_Upgrade.showTip(menuScreen.returnTitle())
+        Sniper_Upgrade.showButton(Shop_Screen.returnTitle())
+        Sniper_Damage_Level.showButton(Shop_Screen.returnTitle())
+        Sniper_Damage_Cost.showButton(Shop_Screen.returnTitle())
+        clickdamageupgrade.showTip(Dungeon_Screen.returnTitle())
+        Mercernary_Upgrade.showTip(Dungeon_Screen.returnTitle())
+        Assassin_Upgrade.showTip(Dungeon_Screen.returnTitle())
+        Sniper_Upgrade.showTip(Dungeon_Screen.returnTitle())
         if data['goldamt'] < 0:
             data['goldamt'] = 0
         if clickdamageupgrade.focusCheck(mouse_pos, mouse_click):
@@ -295,11 +348,11 @@ while not done:
                 data['WhetstoneCost'] = math.ceil((5+data['Whetstone_Level'])*1.07**(data['Whetstone_Level']-1))
                 
                 Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(data['goldamt']))), "")
-                Gold.showButton(screen2.returnTitle())
+                Gold.showButton(Shop_Screen.returnTitle())
                 clickdamagelevel = Button(135, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(data['Whetstone_Level']), "")
-                clickdamagelevel.showButton(screen2.returnTitle())
+                clickdamagelevel.showButton(Shop_Screen.returnTitle())
                 clickdamagecost = Button(260, 100, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(math.floor(data['WhetstoneCost']))), "")
-                clickdamagecost.showButton(screen2.returnTitle())
+                clickdamagecost.showButton(Shop_Screen.returnTitle())
         if Mercernary_Upgrade.focusCheck(mouse_pos, mouse_click):
             if data['goldamt'] >= data['Mercernary_Cost']:
                 #During testing the gold amount was going negative after upgrading Mercerary due to error where i was checking if gold was larger than whetstone cost
@@ -309,11 +362,11 @@ while not done:
                 
                 data['Mercernary_Cost'] = math.ceil((50* data['Mercernary_Level'])*1.07**(data['Mercernary_Level']-1))
                 Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(data['goldamt']))), "")
-                Gold.showButton(screen2.returnTitle())
+                Gold.showButton(Shop_Screen.returnTitle())
                 Mercernary_Damage_Level = Button(135, 200, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(data['Mercernary_Level']),"")
-                Mercernary_Damage_Level.showButton(screen2.returnTitle())
+                Mercernary_Damage_Level.showButton(Shop_Screen.returnTitle())
                 Mercernary_Damage_Cost = Button(260, 200, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(data['Mercernary_Cost']))), "")                
-                Mercernary_Damage_Cost.showButton(screen2.returnTitle())
+                Mercernary_Damage_Cost.showButton(Shop_Screen.returnTitle())
         if Assassin_Upgrade.focusCheck(mouse_pos, mouse_click):
             if data['goldamt'] >= data['Assassin_Cost']:
                     
@@ -323,11 +376,11 @@ while not done:
                 
                 data['Assassin_Cost'] = math.ceil((250* data['Assassin_Level'])*1.07**(data['Assassin_Level']-1))
                 Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(data['goldamt']))), "")
-                Gold.showButton(screen2.returnTitle())
+                Gold.showButton(Shop_Screen.returnTitle())
                 Assassin_Damage_Level = Button(135, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(data['Assassin_Level']), "")
-                Assassin_Damage_Level.showButton(screen2.returnTitle())
+                Assassin_Damage_Level.showButton(Shop_Screen.returnTitle())
                 Assassin_Damage_Cost = Button(260, 300, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(data['Assassin_Cost']))), "")                
-                Assassin_Damage_Cost.showButton(screen2.returnTitle())
+                Assassin_Damage_Cost.showButton(Shop_Screen.returnTitle())
         if Sniper_Upgrade.focusCheck(mouse_pos, mouse_click):
             if data['goldamt'] >= data['Sniper_Cost']:
             
@@ -337,15 +390,18 @@ while not done:
     
                 data['Sniper_Cost'] = math.ceil((1000* data['Sniper_Level'])*1.07**(data['Sniper_Level']-1))
                 Gold = Button(10, 50, 125, 50, colours["Black"], colours["Black"], "arial", 15, colours["White"], "Gold: {fname}".format(fname = str(math.ceil(data['goldamt']))), "")
-                Gold.showButton(screen2.returnTitle())
+                Gold.showButton(Shop_Screen.returnTitle())
                 Sniper_Damage_Level = Button(135, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(data['Sniper_Level']), "")
-                Sniper_Damage_Level.showButton(screen2.returnTitle())
+                Sniper_Damage_Level.showButton(Shop_Screen.returnTitle())
                 Sniper_Damage_Cost = Button(260, 400, 125, 50, colours["Black"], colours["Red"], "arial", 15, colours["White"], str(int(round(data['Sniper_Cost']))), "")                
-                Sniper_Damage_Cost.showButton(screen2.returnTitle())     
+                Sniper_Damage_Cost.showButton(Shop_Screen.returnTitle())     
 
         if returnm:
-            win = menuScreen.makeCurrent()
-            screen2.endCurrent()
-
+            win = Dungeon_Screen.makeCurrent()
+            Shop_Screen.endCurrent()
+    elif Game_Over_Screen.checkUpdate():
+        Game_Over_Button.showButton(Game_Over_Screen.returnTitle())
+        
+    
     pygame.display.update()
 pygame.quit()
