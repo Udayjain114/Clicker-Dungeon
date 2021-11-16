@@ -77,17 +77,7 @@ class Button():
         def showButton(self, display):
             color = self.fbcolour if self.current else self.bcolour
             pygame.draw.rect(display, color, self.rect)
-            display.blit(self.textsurface, self.textsurface.get_rect(center = self.rect.center))        
-        
-        #def showButton(self, display):
-            #if(self.current):
-                #pygame.draw.rect(display, self.fbcolour, (self.x, self.y, self.sx, self.sy))
-                                
-            #else:
-                #pygame.draw.rect(display, self.bcolour, (self.x, self.y, self.sx, self.sy))
-
-            #textsurface = self.buttonf.render(self.text, False, self.fcolour)
-            #display.blit(textsurface, ((self.x + (self.sx/2) - (self.fontsize/2)*(len(self.text)/2) - 5,(self.y + (self.sy/2) -(self.fontsize/2) - 4))))
+            display.blit(self.textsurface, self.textsurface.get_rect(center = self.rect.center))       
                        
         def showTip(self, display):
             if self.current:
@@ -116,7 +106,7 @@ class Enemy(pygame.sprite.Sprite):
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-
+Information_Screen = Screen("Information", 400, 350, colours["White"])
 Opening_Screen = Screen("Menu", 400, 350, colours["White"])
 Dungeon_Screen = Screen("Dungeon", 400, 700, colours["White"])
 Shop_Screen = Screen("Shop ", 400, 700, colours["White"])
@@ -128,8 +118,18 @@ done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
 
 hitpoints = data['orighpamt']
+Restart_Game = Button(000, 000, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "Play Again? ", "")
+Game_Information_Part_1 = Button(000, 000, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "To play the game you have to click ", "")
+Game_Information_Part_2 = Button(000, 30, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], " on the monsters to deal damage to ", "")
+Game_Information_Part_3 = Button(000, 60, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "them. Once you bring their HP down", "")
+Game_Information_Part_4 = Button(000, 90, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "to zero they will drop gold. You can ", "")
+Game_Information_Part_5 = Button(000, 120, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "use this gold in the shop to buy ", "")
+Game_Information_Part_6 = Button(000, 150, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "upgrades. These upgrades make", "")
+Game_Information_Part_7 = Button(000, 180, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "either your Click Damage or your", "")
+Game_Information_Part_8 = Button(000, 210, 400, 20, colours["White"], colours["Red"], "arial", 30, colours["Black"], "Idle Damage stronger.", "")
+Return_To_Menu = Button(100, 250, 200, 50, colours["Black"], colours["Red"], "arial", 30, colours["White"], "Menu", "Return To Menu")
 Game_Over_Button =  Button(100, 500, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Congratulations You Won!", "")
-Game_Information = Button(100, 133, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Information", "To ")
+Game_Information_Link = Button(100, 133, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Information", "")
 New_Game = Button(100, 000, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "New Game", "")
 Continue_Game = Button(100, 266, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Continue", "")
 Level_Info = Button(100, 600, 200, 50, colours["Black"], colours["Red"], "arial", 20, colours["White"], "Level: {0} Stage: {1}".format(data['level'], data['Stage']), "")
@@ -168,6 +168,7 @@ while not done:
     Dungeon_Screen.screenUpdate()
     Shop_Screen.screenUpdate()
     Game_Over_Screen.screenUpdate()
+    Information_Screen.screenUpdate()
     mouse_pos = pygame.mouse.get_pos()
     keys = pygame.key.get_pressed()
     
@@ -214,10 +215,11 @@ while not done:
     if Opening_Screen.checkUpdate():
         New_Game.showButton(Opening_Screen.returnTitle())   
         Continue_Game.showButton(Opening_Screen.returnTitle())
-        Game_Information.showButton(Opening_Screen.returnTitle())        
-        Game_Information.showTip(Opening_Screen.returnTitle())
+        Game_Information_Link.showButton(Opening_Screen.returnTitle())        
+        Game_Information_Link.showTip(Opening_Screen.returnTitle())
         Start_Game = New_Game.focusCheck(mouse_pos, mouse_click)
         Resume_Game = Continue_Game.focusCheck(mouse_pos, mouse_click)
+        See_Information = Game_Information_Link.focusCheck(mouse_pos, mouse_click)
         
         if Start_Game:
             win = Dungeon_Screen.makeCurrent()
@@ -235,8 +237,24 @@ while not done:
             time_elapsed = (int((data["Opening_Epoch"])) - int((data["End_time"])))
             data["goldamt"] += math.floor((time_elapsed*total_CPS)/15)
             data['End_time'] -= data['End_time']
+        if See_Information:
+            win = Information_Screen.makeCurrent()
+            Opening_Screen.endCurrent()
             
-    
+    elif Information_Screen.checkUpdate():
+        Game_Information_Part_1.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_2.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_3.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_4.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_5.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_6.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_7.showButton(Information_Screen.returnTitle())
+        Game_Information_Part_8.showButton(Information_Screen.returnTitle())
+        Go_to_menu = Return_To_Menu.focusCheck(mouse_pos, mouse_click)
+        Return_To_Menu.showButton(Information_Screen.returnTitle())
+        if Go_to_menu:
+            win = Opening_Screen.makeCurrent()
+            Information_Screen.endCurrent()
     elif Dungeon_Screen.checkUpdate():
         if data['level'] == 51 and data['current_monster'] == 0:
             win = Game_Over_Screen.makeCurrent()
@@ -401,7 +419,11 @@ while not done:
             Shop_Screen.endCurrent()
     elif Game_Over_Screen.checkUpdate():
         Game_Over_Button.showButton(Game_Over_Screen.returnTitle())
-        
+        Restart_Game.showButton(Game_Over_Screen.returnTitle())
+        Restart = Restart_Game.focusCheck(mouse_pos, mouse_click)
+        if Restart:
+            win = Opening_Screen.makeCurrent()
+            Game_Over_Screen.endCurrent()
     
     pygame.display.update()
 pygame.quit()
