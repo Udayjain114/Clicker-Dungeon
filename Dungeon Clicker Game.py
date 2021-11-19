@@ -1,7 +1,7 @@
 import pygame
 import math
 import json
-import time
+import os
 pygame.init()
 pygame.font.init()
 clock = pygame.time.Clock()
@@ -18,7 +18,7 @@ Colours = {
 data = {
     'Original_HP_Amount': 10,
     'gold_dropped': 10,
-    'Whetstone_Level': 1,
+    'Whetstone_Level': 0,
     'Mercernary_Level': 0,
     'Assassin_Level': 0,
     'Sniper_Level': 0,
@@ -35,11 +35,13 @@ data = {
     'Sniper_Cost': 500,
     'second': 0,
     'counter': 30000,
-    'Stage': 1,
-    "Opening_Epoch": 0,
-    "End_time": 0
+    'Stage': 1
 }
-
+Check_File = os.path.isfile("Save_Data.txt")
+if not Check_File:
+    with open("Save_Data.txt", "x") as score_file:
+        json.dump(data, score_file)
+        data["Stage"] == 1
 # This class allows me to create multiple screens that I can easily switch
 # Between
 
@@ -155,8 +157,10 @@ done = False
 font = pygame.font.Font('freesansbold.ttf', 32)
 # All the buttons that i will need for the game are here
 HP = data['Original_HP_Amount']
-Restart_Game = Button(000, 000, 400, 20, Colours["White"], Colours["Red"],
-                      "arial", 30, Colours["Black"], "Play Again? ", "")
+Return_To_Menu_Button = Button(100, 650, 200, 50, Colours["Black"], Colours["Red"],
+                      "arial", 18, Colours["White"], "Menu ", "Return to Menu")
+Restart_Game = Button(000, 000, 400, 200, Colours["Black"], Colours["Red"],
+                      "arial", 30, Colours["White"], "Play Again? ", "")
 Game_Information_Part_1 = Button(000, 000, 400, 20, Colours["White"],
                                  Colours["Red"], "arial", 30, Colours["Black"],
                                  "To play the game you have to click ", "")
@@ -240,11 +244,22 @@ Click_Damage_Upgrade = Button(10, 100, 125, 50, Colours["Black"],
 Gold = Button(10, 50, 125, 50, Colours["Black"], Colours["Black"], "arial",
               15, Colours["White"],
               "Gold: {fname}".format(fname=str(data['Gold_Amount'])), "")
-Gold_Dungeon = Button(10, 0, 125, 50, Colours["White"],
+Gold_Dungeon = Button(10, 550, 400, 50, Colours["White"],
                       Colours["White"], "arial",
                       15, Colours["Black"],
                       "Gold: {fname}".format(fname=str(data['Gold_Amount'])),
                       "")
+Total_CPS_Button = Button(300, 0, 100, 50, Colours["White"],
+                          Colours["White"], "arial",
+                          15, Colours["Black"],
+                          str(data["Mercernary_CPS"] +
+                          data["Assassin_CPS"] + data["Sniper_CPS"]),
+                          "")
+Total_Click_Damage_Button = Button(0, 0, 100, 50, Colours["White"],
+                                   Colours["White"], "arial",
+                                   15, Colours["Black"],
+                                   str(data["Click_Damage"]),
+                                    "")
 Shop_Button = Button(125, 500, 150, 50, Colours["Black"], Colours["Red"],
                      "arial", 20, Colours["White"], "Shop", "Enter The Shop")
 Dungeon_Button = Button(125, 500, 150, 50, Colours["Black"],
@@ -252,10 +267,17 @@ Dungeon_Button = Button(125, 500, 150, 50, Colours["Black"],
                         "Dungeon", "Enter The Dungeon")
 Hitbox_Button = Button(80, 50, 280, 400, Colours["White"],
                        Colours["White"], "arial", 20, Colours["White"], "", "")
-HP_Amount = Button(100, 0, 200, 50, Colours["White"], Colours["Black"],
+HP_Amount = Button(100, 0, 100, 50, Colours["White"], Colours["Black"],
                    "arial", 20, Colours["Black"], str(HP), "")
 boss_timer = Button(125, 450, 150, 50, Colours["Black"], Colours["Red"],
                     "arial", 20, Colours["White"], "Boss", "")
+cost = Button(260, 50, 125, 50, Colours["Black"],
+              Colours["Red"], "arial", 18, Colours["White"],
+              "cost", "")
+upgrade_level = Button(135, 50, 125, 50,
+                       Colours["Black"], Colours["Red"],
+                       "arial", 18, Colours["White"],
+                       "level", "")
 goblin = Enemy(30, 80, "images\goblin.png")
 monster_2 = Enemy(50, 100, "images\monster2.png")
 monster_3 = Enemy(50, 100, "images\monster3.png")
@@ -318,10 +340,6 @@ while not done:
     mouse_click = False
     for event in pygame.event.get():
         if(event.type == pygame.QUIT):
-            # This grabs the time the user leaves the game so i can then
-            # calculate how much time its been between when they last opened
-            # the game to calculate how much gold they made when they left
-            data['End_time'] += int(time.time())
 
             with open("Save_Data.txt", "w") as score_file:
                 json.dump(data, score_file)
@@ -342,22 +360,34 @@ while not done:
 # Will start a new game
         if Start_Game:
             win = Dungeon_Screen.Make_Current()
+            with open("DO_NOT_EDIT.txt") as original_score_file:
+                data = json.load(original_score_file)
 
+            data["level"] == 1
             Opening_Screen.End_Current()
 # Will continue the last game with everything they had and extra gold
 # depending on DPS and how long they've been away
         if Resume_Game:
             win = Dungeon_Screen.Make_Current()
-            with open("Save_Data.txt") as score_file:
-                data = json.load(score_file)
+            Check_File = os.path.isfile("Save_Data.txt")
+            if not Check_File:
+                with open("DO_NOT_EDIT.txt") as original_score_file:
+                    data = json.load(original_score_file)
+                    data["level"] == 1
+
+            if Check_File:
+                with open("Save_Data.txt") as score_file:
+                    data = json.load(score_file)
             Opening_Screen.End_Current()
             data["counter"] == 30000
             data["Stage"] -= 1
+            if data["Stage"] <= 0:
+                data["Stage"] += 2
             if data['current_monster'] == 9:
                 data["level"] -= 1
                 data["Stage"] += 10
 
-            Gold_Dungeon = Button(10, 0, 125, 50,
+            Gold_Dungeon = Button(10, 550, 400, 50,
                                   Colours["White"], Colours["White"], "arial",
                                   15, Colours["Black"],
                                   "Gold: {fname}".format(fname=str(
@@ -377,11 +407,6 @@ while not done:
                                Colours["Black"],
                                "arial", 20, Colours["Black"], str(HP), "")
             HP_Amount.Show_Button(Dungeon_Screen.Return_Title())
-            data['Opening_Epoch'] = int(time.time())
-            time_elapsed = (int((
-                data["Opening_Epoch"])) - int((data["End_time"])))
-            data["Gold_Amount"] += math.floor((time_elapsed * total_CPS) / 15)
-            data['End_time'] -= data['End_time']
 # Take the user to a screen with the game information on it
         if See_Information:
             win = Information_Screen.Make_Current()
@@ -404,13 +429,37 @@ while not done:
             Information_Screen.End_Current()
 # This is the main game screen
     elif Dungeon_Screen.Check_Update():
-        if data['level'] == 51 and data['current_monster'] == 0:
+        if data['level'] == 16 and data['current_monster'] == 0:
+
             win = Game_Over_Screen.Make_Current()
             Dungeon_Screen.End_Current()
+        Total_CPS_Button = Button(300, 0, 100, 50, Colours["White"],
+                                  Colours["White"], "arial",
+                                  15, Colours["Black"], "DPS: {DPS}".format
+                                  (DPS=str(data["Mercernary_CPS"] +
+                                   data["Assassin_CPS"] +
+                                   data["Sniper_CPS"])), "")
+        Total_Click_Damage_Button = Button(0, 0, 100, 50, Colours["White"],
+                                           Colours["White"], "arial",
+                                           15, Colours["Black"],
+                                           "Click Damage: {CD}".format(
+                                               CD=str(data["Click_Damage"])),
+                                           "")
+        Return_To_Menu_Button.Show_Button(Dungeon_Screen.Return_Title())
+        Go_Back = Return_To_Menu_Button.Focus_Check(mouse_pos, mouse_click)
+        Return_To_Menu_Button.Show_Tip(Dungeon_Screen.Return_Title())
+        Total_CPS_Button.Show_Button(Dungeon_Screen.Return_Title())
+        Total_Click_Damage_Button.Show_Button(Dungeon_Screen.Return_Title())
         screen2button = Shop_Button.Focus_Check(mouse_pos, mouse_click)
         Level_Info.Show_Button(Dungeon_Screen.Return_Title())
         attack = Hitbox_Button.Focus_Check(mouse_pos, mouse_click)
         Hitbox_Button.Show_Button(Dungeon_Screen.Return_Title())
+        Gold_Dungeon = Button(10, 550, 400, 50, Colours["White"],
+                              Colours["White"], "arial",
+                              15, Colours["Black"],
+                              "Gold: {fname}".format(
+                                  fname=str(data['Gold_Amount'])),
+                              "")
         Gold_Dungeon.Show_Button(Dungeon_Screen.Return_Title())
 # This part replaces the monster and draws the next one in line
         if data['current_monster'] == 0:
@@ -472,7 +521,7 @@ while not done:
                           Colours["Black"], "arial", 15, Colours["White"],
                           "Gold: {fname}".format(fname=str(
                                       data['Gold_Amount'])), "")
-            Gold_Dungeon = Button(10, 0, 125, 50, Colours["White"],
+            Gold_Dungeon = Button(10, 550, 400, 50, Colours["White"],
                                   Colours["White"], "arial",
                                   15, Colours["Black"],
                                   "Gold: {fname}".format(fname=str(
@@ -497,13 +546,49 @@ while not done:
             win = Shop_Screen.Make_Current()
 
             Dungeon_Screen.End_Current()
+        if Go_Back:
+            win = Opening_Screen.Make_Current()
+            with open("Save_Data.txt", "w") as score_file:
+                json.dump(data, score_file)
+            Dungeon_Screen.End_Current()
 # This is all of the shop components
     elif Shop_Screen.Check_Update():
+        Assassin_Damage_Level = Button(135, 300, 125, 50, Colours["Black"],
+                                       Colours["Red"], "arial", 15, Colours["White"],
+                                       str(data['Assassin_Level']), "")
+        Assassin_Damage_Cost = Button(260, 300, 125, 50, Colours["Black"],
+                                      Colours["Red"], "arial", 15, Colours["White"],
+                                      str(int(round(data['Assassin_Cost']))), "")
+        Sniper_Damage_Level = Button(135, 400, 125, 50, Colours["Black"],
+                                     Colours["Red"], "arial", 15, Colours["White"],
+                                     str(data['Sniper_Level']), "")
+        Sniper_Damage_Cost = Button(260, 400, 125, 50, Colours["Black"],
+                                    Colours["Red"], "arial", 15, Colours["White"],
+                                    str(int(round(data['Sniper_Cost']))), "")
+        Mercernary_Damage_Level = Button(135, 200, 125, 50, Colours["Black"],
+                                         Colours["Red"], "arial", 15, Colours["White"],
+                                         str(data['Mercernary_Level']), "")
+        Mercernary_Damage_Cost = Button(260, 200, 125, 50, Colours["Black"],
+                                        Colours["Red"], "arial", 15, Colours["White"],
+                                        str(int(round(data['Mercernary_Cost']))), "")
+        Click_Damage_Level = Button(135, 100, 125, 50,
+                                    Colours["Black"], Colours["Red"],
+                                    "arial", 15, Colours["White"],
+                                    str(data['Whetstone_Level']), "")
+        Click_Damage_Cost = Button(260, 100, 125, 50, Colours["Black"],
+                                   Colours["Red"], "arial", 15, Colours["White"],
+                                   str(int(round(data['Whetstone_Cost']))), "")
+        cost.Show_Button(Shop_Screen.Return_Title())
+        upgrade_level.Show_Button(Shop_Screen.Return_Title())
         Return_To_Dungeon = Dungeon_Button.Focus_Check(mouse_pos, mouse_click)
         Dungeon_Button.Show_Button(Shop_Screen.Return_Title())
         Dungeon_Button.Show_Tip(Dungeon_Screen.Return_Title())
         Click_Damage_Upgrade.Show_Button(Shop_Screen.Return_Title())
         Click_Damage_Level.Show_Button(Shop_Screen.Return_Title())
+        Gold = Button(10, 50, 125, 50, Colours["Black"],
+                      Colours["Black"], "arial", 15, Colours["White"],
+                      "Gold: {fname}".format(fname=str(
+                          data['Gold_Amount'])), "")
         Gold.Show_Button(Shop_Screen.Return_Title())
         Click_Damage_Cost.Show_Button(Shop_Screen.Return_Title())
         Mercernary_Upgrade.Show_Button(Shop_Screen.Return_Title())
@@ -528,11 +613,11 @@ while not done:
                 data['Whetstone_Level'] += 1
                 data['Click_Damage'] += 2
                 data['Gold_Amount'] -= data['Whetstone_Cost']
-                data['Whetstone_Cost'] = math.ceil((5 +
-                                                    data['Whetstone_Level']) *
-                                                   1.07 **
-                                                   (data['Whetstone_Level'] -
-                                                    1))
+                data['Whetstone_Cost'] = math.ceil((1 *
+                                                     data
+                                                     ['Whetstone_Level']) *
+                                                    1.07 **
+                                                    (data['Whetstone_Level']))
 
                 Gold = Button(10, 50, 125, 50, Colours["Black"],
                               Colours["Black"], "arial", 15, Colours["White"],
@@ -567,8 +652,7 @@ while not done:
                                                      data
                                                      ['Mercernary_Level']) *
                                                     1.07 **
-                                                    (data['Mercernary_Level'] -
-                                                     1))
+                                                    (data['Mercernary_Level']))
                 Gold = Button(10, 50, 125, 50, Colours["Black"],
                               Colours["Black"], "arial", 15, Colours["White"],
                               "Gold: {fname}".format(fname=str(
@@ -604,7 +688,7 @@ while not done:
                 data['Assassin_Cost'] = math.ceil((150 *
                                                    data['Assassin_Level']) *
                                                   1.07 **
-                                                  (data['Assassin_Level'] - 1))
+                                                  (data['Assassin_Level']))
                 Gold = Button(10, 50, 125, 50, Colours["Black"],
                               Colours["Black"], "arial", 15, Colours["White"],
                               "Gold: {fname}".format(fname=str
@@ -631,11 +715,11 @@ while not done:
 
                 data['Gold_Amount'] = data['Gold_Amount'] - data['Sniper_Cost']
                 data['Sniper_Level'] += 1
-                data['Sniper_CPS'] += 74
+                data['Sniper_CPS'] += 76
 
                 data['Sniper_Cost'] = math.ceil((500 * data['Sniper_Level']) *
                                                 1.07 **
-                                                (data['Sniper_Level'] - 1))
+                                                (data['Sniper_Level']))
                 Gold = Button(10, 50, 125, 50, Colours["Black"],
                               Colours["Black"], "arial", 15, Colours["White"],
                               "Gold: {fname}".format(fname=str
@@ -666,6 +750,7 @@ while not done:
         Restart = Restart_Game.Focus_Check(mouse_pos, mouse_click)
         if Restart:
             win = Opening_Screen.Make_Current()
+            os.remove("Save_Data.txt")
             Game_Over_Screen.End_Current()
 
     pygame.display.update()
